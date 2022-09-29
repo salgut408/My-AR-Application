@@ -10,6 +10,8 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.ar.core.*
+import com.google.ar.core.CameraConfig
+import com.google.ar.core.CameraConfigFilter
 import com.google.ar.core.ArCoreApk.InstallStatus
 import com.google.ar.core.exceptions.*
 import com.sgut.android.myarapplication.databinding.ActivityMainBinding
@@ -25,7 +27,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private val TAG: String = MainActivity::class.java.simpleName
     private var installRequested = false
     private var mode: Mode = Mode.VIKING
-    private var session: Session? = null
+    private  var session: Session? = null
 
     //top & UI
 
@@ -41,7 +43,8 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
 
     //define each prop as an objRenderer & adding Plane attachment properties
     // mustache
-
+    private val augmentedFaceRenderer = AugmentedFaceRenderer()
+    private val noseObject = ObjectRenderer
 
     private val vikingObject = ObjectRenderer()
     private val cannonObject = ObjectRenderer()
@@ -52,6 +55,9 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private var targetAttachment: PlaneAttachment? = null
 
     // Temp matrix allocated here 2 reduce # of allocations and taps for each frame
+    private val noseMatrix = FloatArray(16)
+    private val DEFAULT_COLOR = floatArrayOf(0f, 0f, 0f, 0f)
+
     private val maxAllocationSize = 16
     private val anchorMatrix = FloatArray(maxAllocationSize)
     private val queuedSingleTaps = ArrayBlockingQueue<MotionEvent>(maxAllocationSize)
@@ -154,6 +160,13 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
 
             // Create the session.
             session = Session(this@MainActivity)
+            //camera config moment
+
+//            val filter = CameraConfigFilter(session).setFacingDirection(CameraConfig.FacingDirection.FRONT)
+//            val cameraConfig = session!!.getSupportedCameraConfigs(filter)[0]
+//             session!!.cameraConfig = cameraConfig
+
+
 
         } catch (e: UnavailableArcoreNotInstalledException) {
             message = "Please install ARCore"
@@ -196,7 +209,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        results: IntArray
+        results: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, results)
         if (!CameraPermissionHelper.hasCameraPermission(this@MainActivity)) {
@@ -336,7 +349,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         scaleFactor: Float,
         projectionMatrix: FloatArray,
         viewMatrix: FloatArray,
-        lightIntensity: FloatArray
+        lightIntensity: FloatArray,
     ) {
         if (planeAttachment?.isTracking == true) {
             planeAttachment.pose.toMatrix(anchorMatrix, 0)
@@ -380,7 +393,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private fun visualizeTrackedPoints(
         frame: Frame,
         projectionMatrix: FloatArray,
-        viewMatrix: FloatArray
+        viewMatrix: FloatArray,
     ) {
         // Use try-with-resources to automatically release the point cloud.
         frame.acquirePointCloud().use { pointCloud ->
@@ -461,7 +474,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
 
     // : Add addSessionAnchorFromAttachment() function here
     private fun addSessionAnchorFromAttachment(
-        previousAttachment: PlaneAttachment?, hit: HitResult
+        previousAttachment: PlaneAttachment?, hit: HitResult,
     ): PlaneAttachment? {
         //1
         previousAttachment?.anchor?.detach()
