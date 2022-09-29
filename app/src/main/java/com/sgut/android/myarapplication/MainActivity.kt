@@ -10,8 +10,6 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.ar.core.*
-import com.google.ar.core.CameraConfig
-import com.google.ar.core.CameraConfigFilter
 import com.google.ar.core.ArCoreApk.InstallStatus
 import com.google.ar.core.exceptions.*
 import com.sgut.android.myarapplication.databinding.ActivityMainBinding
@@ -44,7 +42,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     //define each prop as an objRenderer & adding Plane attachment properties
     // mustache
     private val augmentedFaceRenderer = AugmentedFaceRenderer()
-    private val noseObject = ObjectRenderer
+    private val noseObject = ObjectRenderer()
 
     private val vikingObject = ObjectRenderer()
     private val cannonObject = ObjectRenderer()
@@ -53,6 +51,8 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private var vikingAttachment: PlaneAttachment? = null
     private var cannonAttachment: PlaneAttachment? = null
     private var targetAttachment: PlaneAttachment? = null
+
+    private var noseAttachment: PlaneAttachment? = null
 
     // Temp matrix allocated here 2 reduce # of allocations and taps for each frame
     private val noseMatrix = FloatArray(16)
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
 
         installRequested = false
 
-        setupTapDetector()
+//        setupTapDetector()
         setupSurfaceView()
 
     }
@@ -95,26 +95,26 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         binding.surfaceView.setRenderer(this)
         binding.surfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
         binding.surfaceView.setWillNotDraw(false)
-        binding.surfaceView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
+//        binding.surfaceView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
     }
 
-    private fun setupTapDetector() {
-        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapUp(e: MotionEvent): Boolean {
-                onSingleTap(e)
-                return true
-            }
+//    private fun setupTapDetector() {
+//        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+//            override fun onSingleTapUp(e: MotionEvent): Boolean {
+//                onSingleTap(e)
+//                return true
+//            }
+//
+//            override fun onDown(e: MotionEvent): Boolean {
+//                return true
+//            }
+//        })
+//    }
 
-            override fun onDown(e: MotionEvent): Boolean {
-                return true
-            }
-        })
-    }
-
-    private fun onSingleTap(e: MotionEvent) {
-        // Queue tap if there is space. Tap is lost if queue is full.
-        queuedSingleTaps.offer(e)
-    }
+//    private fun onSingleTap(e: MotionEvent) {
+//        // Queue tap if there is space. Tap is lost if queue is full.
+//        queuedSingleTaps.offer(e)
+//    }
 
     override fun onResume() {
         super.onResume()
@@ -162,9 +162,13 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             session = Session(this@MainActivity)
             //camera config moment
 
-//            val filter = CameraConfigFilter(session).setFacingDirection(CameraConfig.FacingDirection.FRONT)
-//            val cameraConfig = session!!.getSupportedCameraConfigs(filter)[0]
-//             session!!.cameraConfig = cameraConfig
+            val filter = CameraConfigFilter(session).setFacingDirection(CameraConfig.FacingDirection.FRONT)
+            val cameraConfig = session!!.getSupportedCameraConfigs(filter)[0]
+             session!!.cameraConfig = cameraConfig
+
+            val config = Config(session)
+            config.augmentedFaceMode = Config.AugmentedFaceMode.MESH3D
+            session!!.configure(config)
 
 
 
@@ -196,6 +200,12 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
 
         return true
     }
+
+//    private fun configureSession() {
+//        val config = Config(session)
+//        config.augmentedFaceMode = Config.AugmentedFaceMode.MESH3D
+//        session!.configure(config)
+//    }
 
     override fun onPause() {
         super.onPause()
@@ -239,9 +249,14 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
             // Create the texture and pass it to ARCore session to be filled during update().
+
             backgroundRenderer.createOnGlThread(this@MainActivity)
             planeRenderer.createOnGlThread(this@MainActivity, getString(R.string.model_grid_png))
             pointCloudRenderer.createOnGlThread(this@MainActivity)
+
+            augmentedFaceRenderer.createOnGlThread(this@MainActivity, "models/nose_fur.png")
+            augmentedFaceRenderer.setMaterialProperties(0.0f, 1.0f, 0.1f,6.0f)
+
 
             // set up the objects
             //1-using 3d files from proj to set up objs
@@ -249,10 +264,15 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             cannonObject.createOnGlThread(this@MainActivity,getString(R.string.model_cannon_obj), getString(R.string.model_cannon_png))
             targetObject.createOnGlThread(this@MainActivity,getString(R.string.model_target_obj), getString(R.string.model_target_png))
 
+            noseObject.createOnGlThread(this@MainActivity,getString(R.string.model_nose_obj), getString(R.string.model_nose_png))
+
+
             // 2 - setting ambient/diffuse/spectacular-power on each obj
             targetObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
             vikingObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
             cannonObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
+            noseObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
+            noseObject.setBlendMode(ObjectRenderer.BlendMode.AlphaBlending)
 
 
         } catch (e: IOException) {
@@ -283,8 +303,49 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
                 handleTap(frame, camera)
                 drawBackground(frame)
 
+
+
                 // Keeps the screen unlocked while tracking, but allow it to lock when tracking stops.
                 trackingStateHelper.updateKeepScreenOnFlag(camera.trackingState)
+
+                val faces = session!!.getAllTrackables(AugmentedFace::class.java)
+
+                faces.forEach {face ->
+                    if (face.trackingState==TrackingState.TRACKING){
+                        val uvs = face.meshTextureCoordinates
+                        val indices = face.meshTriangleIndices
+                        val facePose = face.centerPose
+                        val faceVertices = face.meshVertices
+                        val faceNormals = face.meshNormals
+                        // render the face using these values w openGL
+                        noseObject.createOnGlThread(this@MainActivity,getString(R.string.model_nose_obj), getString(R.string.model_nose_png))
+
+                    }
+                    // Face objects use transparency so they must be rendered back to front without depth write.
+
+                    val scaleFactor = 1.0f
+                    GLES20.glDepthMask(false)
+
+                    // Each face's region poses, mesh vertices, and mesh normals are updated every frame.
+
+                    // 1. Render the face mesh first, behind any 3D objects attached to the face regions.
+                    val modelMatrix = FloatArray(16)
+                    val projectionMatrix = computeProjectionMatrix(camera)
+                    val viewMatrix = computeViewMatrix(camera)
+                    val lightIntensity = computeLightIntensity(frame)
+
+                    // Compute lighting from average intensity of the image.
+                    // The first three components are color scaling factors.
+                    // The last one is the average pixel intensity in gamma space.
+                    val colorCorrectionRgba = FloatArray(4)
+                    face.centerPose.toMatrix(modelMatrix, 0)
+                    augmentedFaceRenderer.draw(projectionMatrix, viewMatrix, modelMatrix, colorCorrectionRgba, face)
+// render 3d objs
+                    face.getRegionPose(AugmentedFace.RegionType.NOSE_TIP).toMatrix(noseMatrix, 0)
+                    noseObject.updateModelMatrix(noseMatrix, scaleFactor)
+                    noseObject.draw(viewMatrix, colorCorrectionRgba, DEFAULT_COLOR)
+                    GLES20.glDepthMask(true)
+                }
 
                 // If not tracking, don't draw 3D objects, show tracking failure reason instead.
                 if (!isInTrackingState(camera)) return
@@ -300,13 +361,22 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
                 // : Call drawObject() for Viking, Cannon and Target here
 
                 drawObject(
-                    vikingObject,
-                    vikingAttachment,
+                    noseObject,
+                    noseAttachment,
                     Mode.VIKING.scaleFactor,
                     projectionMatrix,
                     viewMatrix,
                     lightIntensity
                 )
+
+//                drawObject(
+//                    vikingObject,
+//                    vikingAttachment,
+//                    Mode.VIKING.scaleFactor,
+//                    projectionMatrix,
+//                    viewMatrix,
+//                    lightIntensity
+//                )
 
                 drawObject(
                     cannonObject,
@@ -461,7 +531,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
                             == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL)
                 ) {
                     when (mode) {
-                        Mode.VIKING -> vikingAttachment = addSessionAnchorFromAttachment(vikingAttachment, hit)
+                        Mode.VIKING -> noseAttachment = addSessionAnchorFromAttachment(noseAttachment, hit)
                         Mode.CANNON -> cannonAttachment = addSessionAnchorFromAttachment(cannonAttachment, hit)
                         Mode.TARGET -> targetAttachment = addSessionAnchorFromAttachment(targetAttachment, hit)
                     }

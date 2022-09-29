@@ -26,7 +26,7 @@
           android:layout_marginBottom="@dimen/padding_half_8dp"
           android:checked="true"
           android:onClick="onRadioButtonClicked"
-          android:text="Viking" />
+          android:text="Must_1" />
 
       <RadioButton
           android:id="@+id/radioCannon"
@@ -37,7 +37,7 @@
           android:layout_marginBottom="@dimen/padding_half_8dp"
           android:checked="false"
           android:onClick="onRadioButtonClicked"
-          android:text="Canon" />
+          android:text="Must_2" />
 
       <RadioButton
           android:id="@+id/radioTarget"
@@ -48,7 +48,7 @@
           android:layout_marginBottom="@dimen/padding_half_8dp"
           android:checked="false"
           android:onClick="onRadioButtonClicked"
-          android:text="Target" />
+          android:text="Must_3" />
 
   </RadioGroup>
     <android.opengl.GLSurfaceView

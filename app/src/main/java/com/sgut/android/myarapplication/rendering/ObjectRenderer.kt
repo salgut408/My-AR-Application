@@ -28,6 +28,7 @@ class ObjectRenderer {
          * Multiplies the destination color by the source alpha.
          */
         Shadow,
+        AlphaBlending,
         /**
          * Normal alpha blending.
          */
