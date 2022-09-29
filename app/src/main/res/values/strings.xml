@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">My AR Application</string>
+    <string name="model_grid_png">models/trigrid.png</string>
+
+</resources>
