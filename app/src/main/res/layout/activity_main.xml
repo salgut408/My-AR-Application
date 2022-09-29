@@ -25,6 +25,7 @@
           android:layout_marginEnd="@dimen/padding_standard_16dp"
           android:layout_marginBottom="@dimen/padding_half_8dp"
           android:checked="true"
+          android:onClick="onRadioButtonClicked"
           android:text="Viking" />
 
       <RadioButton
@@ -35,6 +36,7 @@
           android:layout_marginEnd="@dimen/padding_standard_16dp"
           android:layout_marginBottom="@dimen/padding_half_8dp"
           android:checked="false"
+          android:onClick="onRadioButtonClicked"
           android:text="Canon" />
 
       <RadioButton
@@ -45,7 +47,7 @@
           android:layout_marginEnd="@dimen/padding_standard_16dp"
           android:layout_marginBottom="@dimen/padding_half_8dp"
           android:checked="false"
-
+          android:onClick="onRadioButtonClicked"
           android:text="Target" />
 
   </RadioGroup>

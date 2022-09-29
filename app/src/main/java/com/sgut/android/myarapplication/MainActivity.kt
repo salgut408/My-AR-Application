@@ -39,7 +39,17 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private val planeRenderer: PlaneRenderer = PlaneRenderer()
     private val pointCloudRenderer: PointCloudRenderer = PointCloudRenderer()
 
-    //TODO Declare Object Renderers / Plane attachments here
+    //define each prop as an objRenderer & adding Plane attachment properties
+    // mustache
+
+
+    private val vikingObject = ObjectRenderer()
+    private val cannonObject = ObjectRenderer()
+    private val targetObject = ObjectRenderer()
+    //plane atchments - created when user taps screen
+    private var vikingAttachment: PlaneAttachment? = null
+    private var cannonAttachment: PlaneAttachment? = null
+    private var targetAttachment: PlaneAttachment? = null
 
     // Temp matrix allocated here 2 reduce # of allocations and taps for each frame
     private val maxAllocationSize = 16
@@ -220,7 +230,18 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             planeRenderer.createOnGlThread(this@MainActivity, getString(R.string.model_grid_png))
             pointCloudRenderer.createOnGlThread(this@MainActivity)
 
-            // TODO - set up the objects
+            // set up the objects
+            //1-using 3d files from proj to set up objs
+            vikingObject.createOnGlThread(this@MainActivity,getString(R.string.model_viking_obj), getString(R.string.model_viking_png))
+            cannonObject.createOnGlThread(this@MainActivity,getString(R.string.model_cannon_obj), getString(R.string.model_cannon_png))
+            targetObject.createOnGlThread(this@MainActivity,getString(R.string.model_target_obj), getString(R.string.model_target_png))
+
+            // 2 - setting ambient/diffuse/spectacular-power on each obj
+            targetObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
+            vikingObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
+            cannonObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
+
+
         } catch (e: IOException) {
             Log.e(TAG, "Failed to create Asset", e)
         }
@@ -263,7 +284,36 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
                 checkPlaneDetected()
                 visualizePlanes(camera, projectionMatrix)
 
-                // TODO: Call drawObject() for Viking, Cannon and Target here
+                // : Call drawObject() for Viking, Cannon and Target here
+
+                drawObject(
+                    vikingObject,
+                    vikingAttachment,
+                    Mode.VIKING.scaleFactor,
+                    projectionMatrix,
+                    viewMatrix,
+                    lightIntensity
+                )
+
+                drawObject(
+                    cannonObject,
+                    cannonAttachment,
+                    Mode.CANNON.scaleFactor,
+                    projectionMatrix,
+                    viewMatrix,
+                    lightIntensity
+                )
+
+                drawObject(
+                    targetObject,
+                    targetAttachment,
+                    Mode.TARGET.scaleFactor,
+                    projectionMatrix,
+                    viewMatrix,
+                    lightIntensity
+                )
+
+
             } catch (t: Throwable) {
                 Log.e(TAG, "exception_on_opengl", t)
             }
@@ -397,6 +447,11 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
                             && trackable.orientationMode
                             == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL)
                 ) {
+                    when (mode) {
+                        Mode.VIKING -> vikingAttachment = addSessionAnchorFromAttachment(vikingAttachment, hit)
+                        Mode.CANNON -> cannonAttachment = addSessionAnchorFromAttachment(cannonAttachment, hit)
+                        Mode.TARGET -> targetAttachment = addSessionAnchorFromAttachment(targetAttachment, hit)
+                    }
                     // TODO: Create an anchor if a plane or an oriented point was hit
                     break
                 }
@@ -404,6 +459,18 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         }
     }
 
-    // TODO: Add addSessionAnchorFromAttachment() function here
+    // : Add addSessionAnchorFromAttachment() function here
+    private fun addSessionAnchorFromAttachment(
+        previousAttachment: PlaneAttachment?, hit: HitResult
+    ): PlaneAttachment? {
+        //1
+        previousAttachment?.anchor?.detach()
+        //2
+        val plane = hit.trackable as Plane
+        val anchor = session!!.createAnchor(hit.hitPose)
+        //3
+        return PlaneAttachment(plane, anchor)
+
+    }
 
 }
