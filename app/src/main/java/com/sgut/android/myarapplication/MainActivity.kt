@@ -254,7 +254,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             planeRenderer.createOnGlThread(this@MainActivity, getString(R.string.model_grid_png))
             pointCloudRenderer.createOnGlThread(this@MainActivity)
 
-            augmentedFaceRenderer.createOnGlThread(this@MainActivity, "models/nose_fur.png")
+            augmentedFaceRenderer.createOnGlThread(this@MainActivity, "models/nose_.png")
             augmentedFaceRenderer.setMaterialProperties(0.0f, 1.0f, 0.1f,6.0f)
 
 
