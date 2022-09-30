@@ -264,6 +264,7 @@ class MainActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             cannonObject.createOnGlThread(this@MainActivity,getString(R.string.model_cannon_obj), getString(R.string.model_cannon_png))
             targetObject.createOnGlThread(this@MainActivity,getString(R.string.model_target_obj), getString(R.string.model_target_png))
 
+            //the mustache obj
             noseObject.createOnGlThread(this@MainActivity,getString(R.string.model_nose_obj), getString(R.string.model_nose_png))
 
 
